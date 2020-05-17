@@ -18,11 +18,11 @@ int dequeue(Queue* queue, void** data);
 
 // Function definitions:
 
-int enqueue(Queue* queue, const void* data){
+int enqueue(Queue* queue, const void* data) {
 	return listAddNext(queue, queue->tail, data);
 }
 
-int dequeue(Queue* queue, void** data){
+int dequeue(Queue* queue, void** data) {
 	return listDelNext(queue, NULL, data);
 }
 

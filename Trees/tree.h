@@ -4,19 +4,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct _BiTreeNode{
+typedef struct _BiTreeNode {
 	void* data;
 
 	struct _BiTreeNode* leftChild;
 	struct _BiTreeNode* rightChild;
 } BiTreeNode;
 
-typedef struct{
+typedef struct {
 	int size;
 
 	BiTreeNode* root;
 
-	void (*destroyFunction)(void* data);
+	// The compare function is to support searching.
+	int (*compare)(const void* key1, const void* key2);
+
+	// destroy is the function used to deallocated data.
+	// Use NULL for static allocation and free() for malloc, calloc, etc.
+	void (*destroy)(void* data);
 } BiTree;
 
 #define getBiTreeSize(tree) ((tree)->size)
@@ -27,7 +32,7 @@ typedef struct{
 #define isBiTreeEOB(node) ((node) == NULL)
 #define isBiTreeLeaf(node) ((node)->leftChild == NULL && (node)->rightChild)
 
-BiTree* biTreeCreate(void (*destroyFunction)(void* data));
+BiTree* biTreeCreate(void (*destroy)(void* data));
 int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data);
 int biTreeAddRight(BiTree* tree, BiTreeNode* node, void* data);
 int biTreeAddRoot(BiTree* tree, void* data);
@@ -41,33 +46,32 @@ void biTreeDestroy(BiTree* tree);
 // Function definitions:
 
 // Initialise new tree and return pointer to it.
-BiTree* biTreeCreate(void (*destroyFunction)(void* data)){
+BiTree* biTreeCreate(void (*destroy)(void* data)) {
 	BiTree* tree = malloc(sizeof(BiTree));
 
 	tree->size = 0;
 	tree->root = NULL;
 
-	// destroyFunction is the function used to deallocated data.
-	// Use NULL for static allocation and free() for malloc, calloc, etc.
-	tree->destroyFunction = destroyFunction;
+	tree->compare = NULL;
+	tree->destroy = destroy;
 
 	return tree;
 }
 
-int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data){
+int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data) {
 	// Initialise new node.
 	BiTreeNode* newNode = malloc(sizeof(BiTreeNode));
 	newNode->leftChild = NULL;
 	newNode->rightChild = NULL;
 
-	if(newNode == NULL){
+	if(newNode == NULL) {
 		fprintf(stderr, "Allocation of tree node failed.\n");
 		return -1;
 	}
 
 	// Insertion at root.
-	if(node == NULL){
-		if(tree->size == 0){
+	if(node == NULL) {
+		if(tree->size == 0) {
 			tree->root = newNode;
 			tree->root->data = data;
 			++(tree->size);
@@ -79,7 +83,7 @@ int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data){
 	}
 
 	// Left child already exists.
-	if(node->leftChild != NULL){
+	if(node->leftChild != NULL) {
 		return -1;
 	}
 
@@ -90,19 +94,19 @@ int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data){
 	return 0;
 }
 
-int biTreeAddRight(BiTree* tree, BiTreeNode* node, void* data){
+int biTreeAddRight(BiTree* tree, BiTreeNode* node, void* data) {
 	// Initialise new node.
 	BiTreeNode* newNode = malloc(sizeof(BiTreeNode));
 	newNode->leftChild = NULL;
 	newNode->rightChild = NULL;
 
-	if(newNode == NULL){
+	if(newNode == NULL) {
 		fprintf(stderr, "Allocation of tree node failed.\n");
 		return -1;
 	}
 	// Insertion at root.
-	if(node == NULL){
-		if(tree->size == 0){
+	if(node == NULL) {
+		if(tree->size == 0) {
 			tree->root = newNode;
 			tree->root->data = data;
 			++(tree->size);
@@ -114,7 +118,7 @@ int biTreeAddRight(BiTree* tree, BiTreeNode* node, void* data){
 	}
 
 	// Right child already exists.
-	if(node->rightChild != NULL){
+	if(node->rightChild != NULL) {
 		return -1;
 	}
 
@@ -126,15 +130,15 @@ int biTreeAddRight(BiTree* tree, BiTreeNode* node, void* data){
 }
 
 // Wrapper to add root node.
-int biTreeAddRoot(BiTree* tree, void* data){
+int biTreeAddRoot(BiTree* tree, void* data) {
 	return biTreeAddLeft(tree, NULL, data);
 }
 
-BiTree* biTreeMerge(BiTree* leftSubtree, BiTree* rightSubtree, void* newRootData){
+BiTree* biTreeMerge(BiTree* leftSubtree, BiTree* rightSubtree, void* newRootData) {
 	// Create the root for the merged tree.
-	BiTree* mergedTree = biTreeCreate(leftSubtree->destroyFunction);
+	BiTree* mergedTree = biTreeCreate(leftSubtree->destroy);
 
-	if(mergedTree == NULL){
+	if(mergedTree == NULL) {
 		fprintf(stderr, "Allocation of merged tree failed.\n");
 	}
 
@@ -153,8 +157,8 @@ BiTree* biTreeMerge(BiTree* leftSubtree, BiTree* rightSubtree, void* newRootData
 }
 
 // Recursive function to delete subtrees. Do not use directly.
-void biTreeDelSubtree(BiTree* tree, BiTreeNode* node){
-	if(node == NULL){
+void biTreeDelSubtree(BiTree* tree, BiTreeNode* node) {
+	if(node == NULL) {
 		return;
 	}
 
@@ -162,8 +166,8 @@ void biTreeDelSubtree(BiTree* tree, BiTreeNode* node){
 	biTreeDelSubtree(tree, node->leftChild);
 	biTreeDelSubtree(tree, node->rightChild);
 
-	if(tree->destroyFunction != NULL){
-		tree->destroyFunction(node->data);
+	if(tree->destroy != NULL) {
+		tree->destroy(node->data);
 	}
 	
 	free(node);
@@ -171,19 +175,19 @@ void biTreeDelSubtree(BiTree* tree, BiTreeNode* node){
 }
 
 // Wrapper for deleting the left child subtree.
-void biTreeDelLeft(BiTree* tree, BiTreeNode* node){
+void biTreeDelLeft(BiTree* tree, BiTreeNode* node) {
 	biTreeDelSubtree(tree, node->leftChild);
 	node->leftChild = NULL;
 }
 
 // Wrapper for deleting the right child subtree.
-void biTreeDelRight(BiTree* tree, BiTreeNode* node){
+void biTreeDelRight(BiTree* tree, BiTreeNode* node) {
 	biTreeDelSubtree(tree, node->rightChild);
 	node->rightChild = NULL;
 }
 
 // Wrapper for deleting the entire tree structure.
-void biTreeDestroy(BiTree* tree){
+void biTreeDestroy(BiTree* tree) {
 	biTreeDelSubtree(tree, tree->root);
 	free(tree);
 }
