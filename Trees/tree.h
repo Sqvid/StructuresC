@@ -16,7 +16,7 @@ typedef struct {
 
 	BiTreeNode* root;
 
-	// The compare function is to support searching.
+	// The compare function to support searching.
 	int (*compare)(const void* key1, const void* key2);
 
 	// destroy is the function used to deallocated data.
@@ -24,13 +24,13 @@ typedef struct {
 	void (*destroy)(void* data);
 } BiTree;
 
-#define getBiTreeSize(tree) ((tree)->size)
-#define getBiTreeRoot(tree) (tree) ((tree)->root)
-#define getBiTreeData(node) ((node)->data)
-#define getBiTreeLeft(node) ((node)->leftChild)
-#define getBiTreeRight(node) ((node)->rightChild)
-#define isBiTreeEOB(node) ((node) == NULL)
-#define isBiTreeLeaf(node) ((node)->leftChild == NULL && (node)->rightChild)
+#define biTreeGetSize(tree) ((tree)->size)
+#define biTreeGetRoot(tree) ((tree)->root)
+#define biTreeGetData(node) ((node)->data)
+#define biTreeGetLeft(node) ((node)->leftChild)
+#define biTreeGetRight(node) ((node)->rightChild)
+#define biTreeIsEOB(node) ((node) == NULL)
+#define biTreeIsLeaf(node) ((node)->leftChild == NULL && (node)->rightChild)
 
 BiTree* biTreeCreate(void (*destroy)(void* data));
 int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data);
@@ -61,13 +61,14 @@ BiTree* biTreeCreate(void (*destroy)(void* data)) {
 int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data) {
 	// Initialise new node.
 	BiTreeNode* newNode = malloc(sizeof(BiTreeNode));
-	newNode->leftChild = NULL;
-	newNode->rightChild = NULL;
 
 	if(newNode == NULL) {
 		fprintf(stderr, "Allocation of tree node failed.\n");
 		return -1;
 	}
+
+	newNode->leftChild = NULL;
+	newNode->rightChild = NULL;
 
 	// Insertion at root.
 	if(node == NULL) {
@@ -79,6 +80,7 @@ int biTreeAddLeft(BiTree* tree, BiTreeNode* node, void* data) {
 			return 0;
 		}
 
+		// Attempting insertion at root of a non-empty tree.
 		return -1;
 	}
 

@@ -16,18 +16,19 @@ typedef struct {
 	ListElement* head;
 	ListElement* tail;
 
+	// destroy is the function used to deallocated data.
+	// Use NULL for static allocation and free() for malloc, calloc, etc.
 	void (*destroy)(void* data);
 } List;
 
-#define getElementData(element) element->data
-#define getListSize(list) list->size
-#define getListHead(list) list->head
-#define getListTail(list) list->tail
-#define getNextElement(element) element->next
-#define isListHead(list, element) list->head == element ? 1 : 0
-#define isListTail(list, element) list->tail == element ? 1 : 0
+#define getElementData(element) ((element)->data)
+#define getListSize(list) ((list)->size)
+#define getListHead(list) ((list)->head)
+#define getListTail(list) ((list)->tail)
+#define getNextElement(element) ((element)->next)
+#define isListHead(list, element) (((list)->head) == (element) ? 1 : 0)
+#define isListTail(list, element) (((list)->tail) == (element) ? 1 : 0)
 
-//void listInit(List* list, void (*destroy)(void* data));
 List* listCreate(void (*destroy)(void* data));
 int listAddNext(List* list, ListElement* element, const void* data);
 int listDelNext(List* list, ListElement* element, void** data);
@@ -47,8 +48,6 @@ List* listCreate(void (*destroy)(void* data)) {
 	list->head = NULL;
 	list->tail = NULL;
 
-	// destroy is the function used to deallocated data.
-	// Use NULL for static allocation and free() for malloc, calloc, etc.
 	list->destroy = destroy;
 
 	return list;
